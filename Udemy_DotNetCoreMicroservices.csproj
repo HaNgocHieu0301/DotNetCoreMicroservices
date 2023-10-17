@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <_ContentIncludedByDefault Remove="Mango\WebApplication1\appsettings.Development.json" />
+    <_ContentIncludedByDefault Remove="Mango\WebApplication1\appsettings.json" />
+    <_ContentIncludedByDefault Remove="Mango\WebApplication1\obj\project.assets.json" />
+    <_ContentIncludedByDefault Remove="Mango\WebApplication1\obj\WebApplication1.csproj.nuget.dgspec.json" />
+    <_ContentIncludedByDefault Remove="Mango\WebApplication1\Properties\launchSettings.json" />
+  </ItemGroup>
+
+</Project>
