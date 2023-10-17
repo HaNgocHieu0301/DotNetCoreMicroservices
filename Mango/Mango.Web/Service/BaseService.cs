@@ -70,6 +70,8 @@ namespace Mango.Web.Service
                         return new() { IsSuccess = false, Message = "Unauthorized" };
                     case System.Net.HttpStatusCode.InternalServerError:
                         return new() { IsSuccess = false, Message = "Internal Server Error" };
+                    case System.Net.HttpStatusCode.BadRequest:
+                        return new() { IsSuccess = false, Message = "Bad Request" };
                     default:
                         var apiContent = await apiResponse.Content.ReadAsStringAsync();
                         var apiResponseDTO = JsonConvert.DeserializeObject<ResponseDTO>(apiContent);

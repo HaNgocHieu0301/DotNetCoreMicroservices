@@ -3,6 +3,7 @@ using Mango.Services.ShoppingCartAPI.Data;
 using Mango.Services.ShoppingCartAPI.Models;
 using Mango.Services.ShoppingCartAPI.Models.DTO;
 using Mango.Services.ShoppingCartAPI.Service.IService;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -11,6 +12,7 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
 {
     [Route("api/cart")]
     [ApiController]
+    //[Authorize]
     public class CartAPIController : ControllerBase
     {
         private ResponseDTO _response;
@@ -18,9 +20,9 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
         private readonly AppDbContext _db;
         private IProductService _productService;
         private ICouponService _couponService;
-        public CartAPIController(ResponseDTO response, IMapper mapper, AppDbContext db, IProductService productService, ICouponService couponService)
+        public CartAPIController(IMapper mapper, AppDbContext db, IProductService productService, ICouponService couponService)
         {
-            _response = response;
+            _response = new();
             _mapper = mapper;
             _db = db;
             _productService = productService;
@@ -86,7 +88,7 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
                     _db.CartHeaders.Add(cartHeader);
                     await _db.SaveChangesAsync();
                     cartDto.CartDetails.First().CartHeaderId = cartHeader.CartHeaderId;
-                    _db.CartDetails.Add(_mapper.Map<CartDetails>(cartDto.CartDetails));
+                    _db.CartDetails.Add(_mapper.Map<CartDetails>(cartDto.CartDetails.First()));
                     await _db.SaveChangesAsync();
                 }
                 else
@@ -145,6 +147,7 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
 
                     _db.CartHeaders.Remove(cartHeaderToRemove);
                 }
+                await _db.SaveChangesAsync();
                 _response.Result = true;
             }
             catch (Exception ex)
@@ -156,7 +159,7 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
         }
 
         //apply Coupon
-        [HttpPost("ApplyCounpon")]
+        [HttpPost("ApplyCoupon")]
         public async Task<object> ApplyCoupon([FromBody] CartDTO cartDto)
         {
             try
