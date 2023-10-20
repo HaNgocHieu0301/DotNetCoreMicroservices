@@ -160,7 +160,7 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
 
         //apply Coupon
         [HttpPost("ApplyCoupon")]
-        public async Task<object> ApplyCoupon([FromBody] CartDTO cartDto)
+        public async Task<ResponseDTO> ApplyCoupon([FromBody] CartDTO cartDto)
         {
             try
             {

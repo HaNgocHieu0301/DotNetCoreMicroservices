@@ -14,6 +14,7 @@ builder.Services.AddHttpClient<IProductService, ProductService>();
 builder.Services.AddHttpClient<ICouponService, CouponService>();
 builder.Services.AddHttpClient<IAuthService, AuthService>();
 builder.Services.AddHttpClient<ICartService, CartService>();
+builder.Services.AddHttpClient<IOrderService, OrderService>();
 
 builder.Services.AddScoped<ITokenProvider, TokenProvider>();
 builder.Services.AddScoped<IBaseService, BaseService>();
@@ -21,6 +22,7 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ICouponService, CouponService>();
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<ICartService, CartService>();
+builder.Services.AddScoped<IOrderService, OrderService>();
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
@@ -35,6 +37,7 @@ SD.CouponAPIBase = builder.Configuration["ServiceURLs:CouponAPI"];
 SD.AuthAPIBase = builder.Configuration["ServiceURLs:AuthAPI"];
 SD.ProductAPIBase = builder.Configuration["ServiceURLs:ProductAPI"];
 SD.ShoppingCartAPIBase = builder.Configuration["ServiceURLs:ShoppingCartAPI"];
+SD.OrderAPIBase = builder.Configuration["ServiceURLs:OrderAPI"];
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

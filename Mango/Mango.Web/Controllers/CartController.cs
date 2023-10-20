@@ -1,4 +1,4 @@
-﻿using Mango.Web.Models;
+﻿        using Mango.Web.Models;
 using Mango.Web.Service.IService;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
@@ -9,17 +9,22 @@ namespace Mango.Web.Controllers
     public class CartController : Controller
     {
         private ICartService _cartService;
+        private IOrderService _orderService;
 
-        public CartController(ICartService cartService)
+        public CartController(ICartService cartService, IOrderService orderService)
         {
             _cartService = cartService;
+            _orderService = orderService;
         }
 
         public async Task<IActionResult> CartIndex()
         {
             return View(await LoadCartDtoBasedOnLoggedInUser());
         }
-
+        public async Task<IActionResult> Checkout() 
+        {
+            return View(await LoadCartDtoBasedOnLoggedInUser());
+        }
         public async Task<CartDTO> LoadCartDtoBasedOnLoggedInUser()
         {
             //register Sub ~ Id in JwtTokenGenerator
@@ -45,6 +50,32 @@ namespace Mango.Web.Controllers
             return View();
         }
 
+        #region Checkout
+
+        [HttpPost]
+        [ActionName("Checkout")]
+        public async Task<IActionResult> Checkout(CartDTO cartDto )
+        {
+            CartDTO cart = await LoadCartDtoBasedOnLoggedInUser();
+            cart.CartHeader.Phone = cartDto.CartHeader.Phone;
+            cart.CartHeader.Email = cartDto.CartHeader.Email;
+            cart.CartHeader.Name = cartDto.CartHeader.Name;
+
+            var response = await _orderService.CreateOrder(cart);
+            OrderHeaderDTO orderHeaderDto = JsonConvert.DeserializeObject<OrderHeaderDTO>(Convert.ToString(response.Result));
+
+            if(response != null && response.IsSuccess)
+            {
+                //get stripe session and redirect to stripe to place order
+            }
+
+
+
+            return View();
+        }
+        #endregion
+
+        #region Coupon Apply - Remove
         [HttpPost]
         public async Task<IActionResult> ApplyCoupon(CartDTO cartDto)
         {
@@ -69,5 +100,6 @@ namespace Mango.Web.Controllers
             }
             return View();
         }
+        #endregion
     }
 }
