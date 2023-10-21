@@ -1,5 +1,6 @@
-﻿        using Mango.Web.Models;
+﻿using Mango.Web.Models;
 using Mango.Web.Service.IService;
+using Mango.Web.Utility;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using System.IdentityModel.Tokens.Jwt;
@@ -21,7 +22,7 @@ namespace Mango.Web.Controllers
         {
             return View(await LoadCartDtoBasedOnLoggedInUser());
         }
-        public async Task<IActionResult> Checkout() 
+        public async Task<IActionResult> Checkout()
         {
             return View(await LoadCartDtoBasedOnLoggedInUser());
         }
@@ -31,7 +32,7 @@ namespace Mango.Web.Controllers
             var userId = User.Claims.Where(u => u.Type == JwtRegisteredClaimNames.Sub)?.FirstOrDefault().Value;
 
             ResponseDTO? response = await _cartService.GetCartByUserIdAsync(userId);
-            if(response != null && response.IsSuccess)
+            if (response != null && response.IsSuccess)
             {
                 CartDTO cartDto = JsonConvert.DeserializeObject<CartDTO>(Convert.ToString(response.Result));
                 return cartDto;
@@ -54,7 +55,7 @@ namespace Mango.Web.Controllers
 
         [HttpPost]
         [ActionName("Checkout")]
-        public async Task<IActionResult> Checkout(CartDTO cartDto )
+        public async Task<IActionResult> Checkout(CartDTO cartDto)
         {
             CartDTO cart = await LoadCartDtoBasedOnLoggedInUser();
             cart.CartHeader.Phone = cartDto.CartHeader.Phone;
@@ -64,15 +65,43 @@ namespace Mango.Web.Controllers
             var response = await _orderService.CreateOrder(cart);
             OrderHeaderDTO orderHeaderDto = JsonConvert.DeserializeObject<OrderHeaderDTO>(Convert.ToString(response.Result));
 
-            if(response != null && response.IsSuccess)
+            if (response != null && response.IsSuccess)
             {
                 //get stripe session and redirect to stripe to place order
+
+                var domain = Request.Scheme + "://" + Request.Host.Value + "/";
+
+                StripeRequestDTO stripeRequestDto = new()
+                {
+                    ApprovedUrl = domain + "cart/Confirmation?orderId=" + orderHeaderDto.OrderHeaderId,
+                    CancelUrl = domain + "cart/checkout",
+                    OrderHeader = orderHeaderDto
+                };
+
+                var stripeResponse = await _orderService.CreateStripeSession(stripeRequestDto);
+                StripeRequestDTO stripeReponseResult = JsonConvert.DeserializeObject<StripeRequestDTO>
+                    (Convert.ToString(stripeResponse.Result));
+                Response.Headers.Add("Location", stripeReponseResult.StripeSessionUrl);
+                return new StatusCodeResult(303);
             }
-
-
-
             return View();
         }
+
+        public async Task<IActionResult> Confirmation(int orderId)
+        {
+            ResponseDTO? response = await _orderService.ValidateStripeSession(orderId);
+            if (response != null && response.IsSuccess)
+            {
+                OrderHeaderDTO orderHeader = JsonConvert.DeserializeObject<OrderHeaderDTO> (Convert.ToString(response.Result));
+                if (orderHeader.Status == SD.Status_Approved)
+                {
+                    return View(orderId);
+                }
+            }
+            //redirect to seome error page based on status but now we only focus on mcsv, so ignore it
+            return View(orderId);
+        }
+
         #endregion
 
         #region Coupon Apply - Remove
