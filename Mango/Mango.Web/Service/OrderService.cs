@@ -37,7 +37,7 @@ namespace Mango.Web.Service
             {
                 ApiType = SD.ApiType.POST,
                 Data = stripeRequestDTO,
-                Url = SD.CouponAPIBase + "/api/order/CreateStripeSession"
+                Url = SD.OrderAPIBase + "/api/order/CreateStripeSession"
             });
         }
 
@@ -47,7 +47,7 @@ namespace Mango.Web.Service
             {
                 ApiType = SD.ApiType.POST,
                 Data = orderHeaderId,
-                Url = SD.CouponAPIBase + "/api/order/ValidateStripeSession"
+                Url = SD.OrderAPIBase + "/api/order/ValidateStripeSession"
             });
         }
     }

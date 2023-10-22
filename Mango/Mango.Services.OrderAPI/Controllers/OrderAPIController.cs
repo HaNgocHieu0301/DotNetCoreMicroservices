@@ -7,7 +7,6 @@ using Mango.Services.OrderAPI.Utility;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Stripe.FinancialConnections;
 using Stripe;
 using Stripe.Checkout;
 
@@ -45,7 +44,9 @@ namespace Mango.Services.OrderAPI.Controllers
                 OrderHeaderDTO orderHeaderDto = _mapper.Map<OrderHeaderDTO>(cartDto.CartHeader);
                 orderHeaderDto.OrderTime = DateTime.Now;
                 orderHeaderDto.Status = SD.Status_Pending;
+                OrderDetailsDTO test = _mapper.Map<OrderDetailsDTO>(cartDto.CartDetails.ToArray()[0]);
                 orderHeaderDto.OrderDetails = _mapper.Map<IEnumerable<OrderDetailsDTO>>(cartDto.CartDetails);
+                orderHeaderDto.OrderTotal = Math.Round(orderHeaderDto.OrderTotal, 2);
 
                 OrderHeader orderCreated = _db.OrderHeaders.Add(_mapper.Map<OrderHeader>(orderHeaderDto)).Entity;
                 await _db.SaveChangesAsync();
@@ -67,7 +68,7 @@ namespace Mango.Services.OrderAPI.Controllers
         {
             try
             {
-                var options = new Stripe.Checkout.SessionCreateOptions
+                var options = new SessionCreateOptions
                 {
                     SuccessUrl = stripeRequestDto.ApprovedUrl,
                     CancelUrl = stripeRequestDto.CancelUrl,
@@ -89,7 +90,7 @@ namespace Mango.Services.OrderAPI.Controllers
                     {
                         PriceData = new SessionLineItemPriceDataOptions
                         {
-                            UnitAmount = (long)(item.Price) * 100, //20.99$ -> 2099
+                            UnitAmount = (long)(item.Product.Price) * 100, //20.99$ -> 2099
                             Currency = "usd",
                             ProductData = new SessionLineItemPriceDataProductDataOptions
                             {
@@ -106,8 +107,8 @@ namespace Mango.Services.OrderAPI.Controllers
                     options.Discounts = DiscountsObj;
                 }
 
-                var service = new Stripe.Checkout.SessionService();
-                Stripe.Checkout.Session session = service.Create(options);
+                var service = new SessionService();
+                Session session = service.Create(options);
                 stripeRequestDto.StripeSessionUrl = session.Url;
                 OrderHeader orderHeader = _db.OrderHeaders.First(u => u.OrderHeaderId == stripeRequestDto.OrderHeader.OrderHeaderId);
                 orderHeader.StripeSessionId = session.Id;
