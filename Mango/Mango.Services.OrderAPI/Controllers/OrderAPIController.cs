@@ -7,6 +7,7 @@ using Mango.Services.OrderAPI.Utility;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Stripe;
 using Stripe.Checkout;
 
@@ -26,13 +27,6 @@ namespace Mango.Services.OrderAPI.Controllers
             _mapper = mapper;
             _db = db;
             _productService = productService;
-        }
-
-        [Authorize]
-        [HttpPost("TestOrder")]
-        public async Task<ActionResult> TestOrder(int orderId)
-        {
-            return Ok("test oke");
         }
 
         [Authorize]
@@ -61,6 +55,85 @@ namespace Mango.Services.OrderAPI.Controllers
             }
             return _response;
         }
+
+        [Authorize]
+        [HttpGet("GetOrders")]
+        public async Task<ResponseDTO> Get(string? userId = "")
+        {
+            try
+            {
+                IEnumerable<OrderHeader> objList;
+                if (User.IsInRole(SD.RoleAdmin))
+                {
+                    objList = _db.OrderHeaders.Include(u => u.OrderDetails).OrderByDescending(u => u.OrderHeaderId).ToList();
+                }
+                else
+                {
+                    objList = _db.OrderHeaders.Include(u => u.OrderDetails)
+                        .Where(u => u.UserId == userId).OrderByDescending(u => u.OrderHeaderId).ToList();
+                }
+                _response.Result = _mapper.Map<IEnumerable<OrderHeaderDTO>>(objList);
+            }
+            catch (Exception ex)
+            {
+                _response.IsSuccess = false;
+                _response.Message = ex.Message;
+            }
+            return _response;
+        }
+
+        [Authorize]
+        [HttpGet("GetOrder/{id:int}")]
+        public ResponseDTO? Get(int id)
+        {
+            try
+            {
+                OrderHeader orderHeader = _db.OrderHeaders.Include(u => u.OrderDetails).First(u => u.OrderHeaderId == id);
+                _response.Result = _mapper.Map<OrderHeaderDTO>(orderHeader);
+            }
+            catch (Exception ex)
+            {
+                _response.IsSuccess = false;
+                _response.Message = ex.Message;
+            }
+            return _response;
+        }
+
+        [Authorize]
+        [HttpPost("UpdateOrderStatus/{orderId:int}")]
+        public ResponseDTO? UpdateOrderStatus(int orderId, [FromBody] string newStatus)
+        {
+            try
+            {
+                OrderHeader orderHeader = _db.OrderHeaders.First(u => u.OrderHeaderId == orderId);
+                if(orderHeader != null)
+                {
+                    if(newStatus == SD.Status_Cancelled)
+                    {
+                        //we will give refund
+                        var options = new RefundCreateOptions
+                        {
+                            Reason = RefundReasons.RequestedByCustomer,
+                            PaymentIntent = orderHeader.PaymentIntendId
+                        };
+
+                        var service = new RefundService();
+                        Refund refund = service.Create(options);
+                    }
+                    orderHeader.Status = newStatus;
+                    _db.SaveChanges();
+                }
+                _response.Result = _mapper.Map<OrderHeaderDTO>(orderHeader);
+            }
+            catch (Exception ex)
+            {
+                _response.IsSuccess = false;
+                _response.Message = ex.Message;
+            }
+            return _response;
+        }
+
+        #region Stripe Session
 
         [Authorize]
         [HttpPost("CreateStripeSession")]
@@ -152,5 +225,7 @@ namespace Mango.Services.OrderAPI.Controllers
             }
             return _response;
         }
+
+        #endregion
     }
 }

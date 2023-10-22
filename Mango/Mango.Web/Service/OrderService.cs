@@ -11,15 +11,6 @@ namespace Mango.Web.Service
         {
             _baseService = baseService;
         }
-        public async Task<ResponseDTO> TestOrder(int orderId)
-        {
-            return await _baseService.SendAsync(new RequestDTO()
-            {
-                ApiType = SD.ApiType.POST,
-                Data = orderId,
-                Url = SD.OrderAPIBase + "/api/order/TestOrder"
-            });
-        }
 
         public async Task<ResponseDTO> CreateOrder(CartDTO cartDto)
         {
@@ -28,6 +19,33 @@ namespace Mango.Web.Service
                 ApiType = SD.ApiType.POST,
                 Data = cartDto,
                 Url = SD.OrderAPIBase + "/api/order/CreateOrder"
+            });
+        }
+
+        public async Task<ResponseDTO> GetAllOrder(string? userId)
+        {
+            return await _baseService.SendAsync(new RequestDTO()
+            {
+                ApiType = SD.ApiType.GET,
+                Url = SD.OrderAPIBase + "/api/order/GetOrders/" + userId
+            });
+        }
+
+        public async Task<ResponseDTO> GetOrder(int orderId)
+        {
+            return await _baseService.SendAsync(new RequestDTO()
+            {
+                ApiType = SD.ApiType.GET,
+                Url = SD.OrderAPIBase + "/api/order/GetOrder/" + orderId
+            });
+        }
+        public async Task<ResponseDTO> UpdateOrderStatus(int orderId, string newStatus)
+        {
+            return await _baseService.SendAsync(new RequestDTO()
+            {
+                ApiType = SD.ApiType.POST,
+                Data = newStatus,
+                Url = SD.OrderAPIBase + "/api/order/UpdateOrderStatus/" + orderId
             });
         }
 
