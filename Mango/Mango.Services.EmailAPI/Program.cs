@@ -1,29 +1,26 @@
-using Mango.MessageBus;
-using Mango.Services.AuthAPI.Data;
-using Mango.Services.AuthAPI.Models;
-using Mango.Services.AuthAPI.Service;
-using Mango.Services.AuthAPI.Service.IService;
-using Microsoft.AspNetCore.Identity;
+using Mango.Services.EmailAPI.Data;
+using Mango.Services.EmailAPI.Extensions;
+using Mango.Services.EmailAPI.Messaging;
+using Mango.Services.EmailAPI.Services;
+using Mango.Services.EmailAPI.Services.IServices;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
+var optionBuilder = new DbContextOptionsBuilder<AppDbContext>();
+optionBuilder.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
+builder.Services.AddSingleton(new EmailService(optionBuilder.Options));
+
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
     //will retrieve the connection string and pass that to use SQL Server
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
 });
+builder.Services.AddSingleton<IAzureMessagingConsumer, AzureServiceBusConsumer>();
 
-builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("ApiSettings:JwtOptions"));
-
-builder.Services.AddIdentity<ApplicationUser, IdentityRole>().AddEntityFrameworkStores<AppDbContext>()
-    .AddDefaultTokenProviders();
 builder.Services.AddControllers();
-builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
-builder.Services.AddScoped<IMessageBus, MessageBus>();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -38,15 +35,16 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseAuthentication();
+
 app.UseAuthorization();
 
 app.MapControllers();
 
 ApplyMigration();
 
-app.Run();
+app.UseAzureServiceBusConsumer();
 
+app.Run();
 void ApplyMigration()
 {
     //get all the services now from this service

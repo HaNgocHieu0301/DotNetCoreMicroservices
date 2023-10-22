@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Mango.MessageBus;
 using Mango.Services.ShoppingCartAPI.Data;
 using Mango.Services.ShoppingCartAPI.Models;
 using Mango.Services.ShoppingCartAPI.Models.DTO;
@@ -20,14 +21,20 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
         private readonly AppDbContext _db;
         private IProductService _productService;
         private ICouponService _couponService;
-        public CartAPIController(IMapper mapper, AppDbContext db, IProductService productService, ICouponService couponService)
+        private IMessageBus _messageBus;
+        private IConfiguration _configuration;
+        public CartAPIController(IMapper mapper, AppDbContext db, IProductService productService, ICouponService couponService, IMessageBus messageBus, IConfiguration configuration)
         {
             _response = new();
             _mapper = mapper;
             _db = db;
             _productService = productService;
             _couponService = couponService;
+            _messageBus = messageBus;
+            _configuration = configuration;
         }
+
+        #region CRUD Cart
 
         //get shopping cart for specific user
         [HttpGet("GetCart/{userId}")]
@@ -149,6 +156,25 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
                 }
                 await _db.SaveChangesAsync();
                 _response.Result = true;
+            }
+            catch (Exception ex)
+            {
+                _response.IsSuccess = false;
+                _response.Message = ex.ToString();
+            }
+            return _response;
+        }
+
+        #endregion
+
+        //Email cart
+        [HttpPost("EmailCartRequest")]
+        public async Task<ResponseDTO> EmailCartRequest([FromBody] CartDTO cartDto)
+        {
+            try
+            {
+                await _messageBus.PublishMessagej(cartDto, _configuration.GetValue<string>("TopicAndQueueNames:EmailShoppingCartQueue"));
+                _response.IsSuccess = true;
             }
             catch (Exception ex)
             {
