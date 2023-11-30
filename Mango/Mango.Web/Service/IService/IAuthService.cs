@@ -1,5 +1,4 @@
-﻿using Mango.Services.AuthAPI.Models;
-using Mango.Web.Models;
+﻿using Mango.Web.Models;
 
 namespace Mango.Web.Service.IService
 {

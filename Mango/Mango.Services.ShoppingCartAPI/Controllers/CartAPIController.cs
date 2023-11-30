@@ -143,7 +143,7 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
                 CartDetails cartDetails = await _db.CartDetails
                     .FirstOrDefaultAsync(u => u.CartDetailsId == cartDetailsId);
 
-                int totalCountOfCartItem = _db.CartDetails.Where(u => u.CartHeaderId == cartDetailsId).Count();
+                int totalCountOfCartItem = _db.CartDetails.Where(u => u.CartHeaderId == cartDetails.CartHeaderId).Count();
                 _db.CartDetails.Remove(cartDetails);
 
                 //if only having 1 cartitem, remove cart header
